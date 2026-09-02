@@ -1,16 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; 
+import 'layar_kalkulator.dart';
+import 'layar_auth.dart';
 
-void main() {
-  runApp(const MainApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://hqdihfmxygxzqmxgfgsr.supabase.co',
+    anonKey: 'sb_publishable_P1rQSJcxdlJMDP45pS_DwA_jWdjA12Z',
+  );
+
+  // Bungkus aplikasi pakai ProviderScope agar Riverpod bisa jalan di seluruh aplikasi
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(body: Center(child: Text('Hello World!'))),
+    return MaterialApp(
+      title: 'NutriBox',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green), 
+        useMaterial3: true,
+      ),
+      home: const LayarAuth(), 
     );
   }
 }
