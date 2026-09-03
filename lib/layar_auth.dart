@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'layar_kalkulator.dart'; 
+import 'layar_kalkulator.dart';
+import 'layar_beranda.dart'; // Tambahkan import ini
 
 class LayarAuth extends StatefulWidget {
   const LayarAuth({super.key});
@@ -16,39 +17,106 @@ class _LayarAuthState extends State<LayarAuth> {
   bool isLogin = true; 
   bool isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _cekStatusLogin();
+  }
+
+  // FUNGSI AUTO-LOGIN (Jika user buka aplikasi lagi)
+  void _cekStatusLogin() {
+    Future.delayed(Duration.zero, () async {
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session != null) {
+        // Cek profilnya, kalau lengkap ke beranda, kalau kosong ke kalkulator
+        final cekProfil = await Supabase.instance.client
+            .from('users')
+            .select('target_diet')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+        if (mounted) {
+          if (cekProfil != null && cekProfil['target_diet'] != null) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LayarBeranda()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()),
+            );
+          }
+        }
+      }
+    });
+  }
+
   Future<void> prosesAuth() async {
     setState(() => isLoading = true);
     
     try {
       if (isLogin) {
-        await Supabase.instance.client.auth.signInWithPassword(
+        // --- LOGIKA JIKA USER MEMILIH MASUK (LOGIN) ---
+        final response = await Supabase.instance.client.auth.signInWithPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
+
+        if (mounted && response.user != null) {
+          // Cek apakah user ini sudah pernah mengisi data diet
+          final cekProfil = await Supabase.instance.client
+              .from('users')
+              .select('target_diet')
+              .eq('id', response.user!.id)
+              .maybeSingle();
+
+          if (cekProfil != null && cekProfil['target_diet'] != null) {
+            // Pelanggan lama yang profilnya sudah ada -> Ke Beranda
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LayarBeranda()),
+            );
+          } else {
+            // Pelanggan yang belum isi profil -> Ke Kalkulator
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()),
+            );
+          }
+        }
       } else {
+        // --- LOGIKA JIKA USER MEMILIH DAFTAR (REGISTER) ---
         await Supabase.instance.client.auth.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
-      }
 
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()),
-        );
+        if (mounted) {
+          // User baru yang berhasil daftar langsung dipaksa ke Kalkulator
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()),
+          );
+        }
       }
     } on AuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
-
-    setState(() => isLoading = false);
   }
 
   @override
@@ -113,7 +181,7 @@ class _LayarAuthState extends State<LayarAuth> {
               TextButton(
                 onPressed: () {
                   setState(() {
-                    isLogin = !isLogin; // Balik statusnya
+                    isLogin = !isLogin;
                   });
                 },
                 child: Text(
