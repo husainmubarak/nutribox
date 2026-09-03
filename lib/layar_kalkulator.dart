@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'layar_pilih_paket.dart';
+import 'layar_auth.dart';
 
 class LayarKalkulatorGizi extends StatefulWidget {
   const LayarKalkulatorGizi({super.key});
@@ -161,6 +162,21 @@ class _LayarKalkulatorGiziState extends State<LayarKalkulatorGizi> {
       appBar: AppBar(
         title: const Text('Profil Fisik', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.green,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: () async {
+              await Supabase.instance.client.auth.signOut();
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LayarAuth()),
+                  (route) => false,
+                );
+              }
+            },
+          )
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

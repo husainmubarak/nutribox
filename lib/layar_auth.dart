@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'layar_kalkulator.dart';
-import 'layar_beranda.dart'; // Tambahkan import ini
+import 'layar_beranda.dart';
+import 'layar_mitra.dart';
 
 class LayarAuth extends StatefulWidget {
   const LayarAuth({super.key});
@@ -28,24 +29,32 @@ class _LayarAuthState extends State<LayarAuth> {
     Future.delayed(Duration.zero, () async {
       final session = Supabase.instance.client.auth.currentSession;
       if (session != null) {
-        // Cek profilnya, kalau lengkap ke beranda, kalau kosong ke kalkulator
-        final cekProfil = await Supabase.instance.client
-            .from('users')
-            .select('target_diet')
+        
+        // 1. CEK DULU, APAKAH USER INI MITRA DAPUR?
+        final cekMitra = await Supabase.instance.client
+            .from('mitra_dapur')
+            .select('id')
             .eq('id', session.user.id)
             .maybeSingle();
 
         if (mounted) {
+          if (cekMitra != null) {
+            // Jika dia Mitra Dapur, lempar ke Layar Mitra
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LayarMitra()));
+            return; // Hentikan fungsi di sini agar tidak lanjut ke bawah
+          }
+
+          // 2. JIKA BUKAN MITRA, BERARTI DIA PELANGGAN BIASA
+          final cekProfil = await Supabase.instance.client
+              .from('users')
+              .select('target_diet')
+              .eq('id', session.user.id)
+              .maybeSingle();
+
           if (cekProfil != null && cekProfil['target_diet'] != null) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LayarBeranda()),
-            );
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LayarBeranda()));
           } else {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()),
-            );
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()));
           }
         }
       }
@@ -57,14 +66,28 @@ class _LayarAuthState extends State<LayarAuth> {
     
     try {
       if (isLogin) {
-        // --- LOGIKA JIKA USER MEMILIH MASUK (LOGIN) ---
+        // LOGIKA LOGIN
         final response = await Supabase.instance.client.auth.signInWithPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
         if (mounted && response.user != null) {
-          // Cek apakah user ini sudah pernah mengisi data diet
+          
+          // 1. CEK DULU, APAKAH USER INI MITRA DAPUR?
+          final cekMitra = await Supabase.instance.client
+              .from('mitra_dapur')
+              .select('id')
+              .eq('id', response.user!.id)
+              .maybeSingle();
+
+          if (cekMitra != null) {
+            // Jika dia Mitra Dapur, lempar ke Layar Mitra
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LayarMitra()));
+            return; // Hentikan fungsi
+          }
+
+          // 2. JIKA BUKAN MITRA, CEK PROFIL PELANGGAN
           final cekProfil = await Supabase.instance.client
               .from('users')
               .select('target_diet')
@@ -72,50 +95,32 @@ class _LayarAuthState extends State<LayarAuth> {
               .maybeSingle();
 
           if (cekProfil != null && cekProfil['target_diet'] != null) {
-            // Pelanggan lama yang profilnya sudah ada -> Ke Beranda
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LayarBeranda()),
-            );
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LayarBeranda()));
           } else {
-            // Pelanggan yang belum isi profil -> Ke Kalkulator
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()),
-            );
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()));
           }
         }
       } else {
-        // --- LOGIKA JIKA USER MEMILIH DAFTAR (REGISTER) ---
+        // LOGIKA DAFTAR (TIDAK BERUBAH)
         await Supabase.instance.client.auth.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
         if (mounted) {
-          // User baru yang berhasil daftar langsung dipaksa ke Kalkulator
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()),
-          );
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()));
         }
       }
     } on AuthException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: Colors.red));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
       }
     } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
-      }
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
