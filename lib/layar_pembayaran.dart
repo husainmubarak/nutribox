@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'layar_kalkulator.dart'; 
+import 'layar_kalkulator.dart';
 
 class LayarPembayaran extends StatefulWidget {
-  const LayarPembayaran({super.key});
+  // 1. Siapkan variabel penerima data
+  final int paketId;
+  final String namaPaket;
+  final int hargaPaket;
+
+  const LayarPembayaran({
+    super.key, 
+    required this.paketId, 
+    required this.namaPaket, 
+    required this.hargaPaket,
+  });
 
   @override
   State<LayarPembayaran> createState() => _LayarPembayaranState();
@@ -19,20 +29,15 @@ class _LayarPembayaranState extends State<LayarPembayaran> {
     try {
       final userId = Supabase.instance.client.auth.currentUser!.id;
 
-      // Simulasi ID paket dan harga (Nanti datanya dioper dari layar Pilih Paket)
-      const int dummyPaketId = 1; 
-      const int dummyHarga = 500000;
-
-      // Simpan riwayat transaksi ke database
+      // 2. Gunakan data asli (widget.paketId dan widget.hargaPaket)
       await Supabase.instance.client.from('transaksi_langganan').insert({
         'user_id': userId,
-        'paket_id': dummyPaketId,
-        'total_harga': dummyHarga,
+        'paket_id': widget.paketId,
+        'total_bayar': widget.hargaPaket,
         'status_bayar': 'Menunggu Konfirmasi',
       });
 
       if (mounted) {
-        // Tampilkan pop-up sukses
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -50,14 +55,13 @@ class _LayarPembayaranState extends State<LayarPembayaran> {
                   minimumSize: const Size.fromHeight(45)
                 ),
                 onPressed: () {
-                  // Kembali ke layar paling awal (Kalkulator/Beranda) dan hapus riwayat layar sebelumnya
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()),
                     (route) => false,
                   );
                 },
-                child: const Text('KEMBALI KE BERANDA', style: TextStyle(color: Colors.white), textAlign: TextAlign.center,),
+                child: const Text('KEMBALI KE BERANDA', style: TextStyle(color: Colors.white)),
               )
             ],
           ),
@@ -91,35 +95,37 @@ class _LayarPembayaranState extends State<LayarPembayaran> {
           children: [
             const Text('Ringkasan Pesanan', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
-
+            
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              child: const Padding(
-                padding: EdgeInsets.all(16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Paket Langganan', style: TextStyle(fontSize: 16)),
-                        Text('Rp 500.000', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        // 3. Tampilkan nama paket dinamis
+                        Expanded(child: Text(widget.namaPaket, style: const TextStyle(fontSize: 16))),
+                        // 4. Tampilkan harga paket dinamis
+                        Text('Rp ${widget.hargaPaket}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ],
                     ),
-                    Divider(height: 30),
-                    Row(
+                    const Divider(height: 30),
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Ongkos Kirim', style: TextStyle(fontSize: 16)),
                         Text('Gratis', style: TextStyle(fontSize: 16, color: Colors.green, fontWeight: FontWeight.bold)),
                       ],
                     ),
-                    Divider(height: 30),
+                    const Divider(height: 30),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Total Bayar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('Rp 500.000', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
+                        const Text('Total Bayar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text('Rp ${widget.hargaPaket}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
                       ],
                     ),
                   ],

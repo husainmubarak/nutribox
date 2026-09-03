@@ -4,8 +4,12 @@ import 'layar_pembayaran.dart';
 
 class LayarJadwal extends StatefulWidget {
   final List<dynamic> daftarAlamat;
+
+  final int paketId;
+  final String namaPaket;
+  final int hargaPaket;
   
-  const LayarJadwal({super.key, required this.daftarAlamat});
+  const LayarJadwal({super.key, required this.daftarAlamat, required this.paketId, required this.namaPaket, required this.hargaPaket});
 
   @override
   State<LayarJadwal> createState() => _LayarJadwalState();
@@ -68,7 +72,13 @@ class _LayarJadwalState extends State<LayarJadwal> {
 
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const LayarPembayaran()),
+          MaterialPageRoute(
+            builder: (context) => LayarPembayaran(
+              paketId: widget.paketId,
+              namaPaket: widget.namaPaket,
+              hargaPaket: widget.hargaPaket,
+            ),
+          ),
         );
       }
     } catch (e) {

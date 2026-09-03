@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'layar_alamat.dart';
 
 class LayarPilihPaket extends StatefulWidget {
@@ -20,7 +21,10 @@ class _LayarPilihPaketState extends State<LayarPilihPaket> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Pilih Paket Langganan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Pilih Paket Langganan',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),
@@ -28,7 +32,9 @@ class _LayarPilihPaketState extends State<LayarPilihPaket> {
         future: _futurePaket,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.green));
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.green),
+            );
           }
           if (snapshot.hasError) {
             return Center(child: Text('Gagal memuat data: ${snapshot.error}'));
@@ -44,11 +50,13 @@ class _LayarPilihPaketState extends State<LayarPilihPaket> {
             itemCount: daftarPaket.length,
             itemBuilder: (context, index) {
               final paket = daftarPaket[index];
-              
+
               return Card(
                 elevation: 2,
                 margin: const EdgeInsets.only(bottom: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -56,14 +64,21 @@ class _LayarPilihPaketState extends State<LayarPilihPaket> {
                     children: [
                       Text(
                         paket['nama_paket'],
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           const Icon(Icons.timer, size: 16, color: Colors.grey),
                           const SizedBox(width: 5),
-                          Text('${paket['durasi_hari']} Hari Pengiriman', style: const TextStyle(color: Colors.grey)),
+                          Text(
+                            '${paket['durasi_hari']} Hari Pengiriman',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 15),
@@ -71,24 +86,42 @@ class _LayarPilihPaketState extends State<LayarPilihPaket> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Rp ${paket['harga']}', 
-                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.orange),
+                            'Rp ${paket['harga']}',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
+                            ),
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                             onPressed: () {
                               Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const LayarAlamat()),
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LayarAlamat(
+                                    paketId: paket['id'],
+                                    namaPaket: paket['nama_paket'],
+                                    hargaPaket: paket['harga'],
+                                  ),
+                                ),
                               );
                             },
-                            child: const Text('PILIH', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          )
+                            child: const Text(
+                              'PILIH',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ),

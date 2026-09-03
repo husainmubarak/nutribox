@@ -3,7 +3,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'layar_jadwal.dart';
 
 class LayarAlamat extends StatefulWidget {
-  const LayarAlamat({super.key});
+
+  final int paketId;
+  final String namaPaket;
+  final int hargaPaket;
+
+  const LayarAlamat({
+    super.key,
+    required this.paketId,
+    required this.namaPaket,
+    required this.hargaPaket,
+  });
 
   @override
   State<LayarAlamat> createState() => _LayarAlamatState();
@@ -167,7 +177,7 @@ class _LayarAlamatState extends State<LayarAlamat> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => LayarJadwal(daftarAlamat: daftarAlamat)),
+                    MaterialPageRoute(builder: (context) => LayarJadwal(daftarAlamat: daftarAlamat, paketId: widget.paketId, namaPaket: widget.namaPaket, hargaPaket: widget.hargaPaket)),
                   );
                 },
                 child: const Text('LANJUT ATUR JADWAL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
