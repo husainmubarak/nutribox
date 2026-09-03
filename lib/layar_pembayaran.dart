@@ -61,7 +61,7 @@ class _LayarPembayaranState extends State<LayarPembayaran> {
                     (route) => false,
                   );
                 },
-                child: const Text('KEMBALI KE BERANDA', style: TextStyle(color: Colors.white)),
+                child: const Text('KEMBALI KE BERANDA', style: TextStyle(color: Colors.white), textAlign: TextAlign.center,),
               )
             ],
           ),
