@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'layar_kalkulator.dart';
-import 'layar_auth.dart'; 
+import 'layar_auth.dart';
 
 class LayarBeranda extends StatefulWidget {
   const LayarBeranda({super.key});
@@ -15,11 +15,14 @@ class _LayarBerandaState extends State<LayarBeranda> {
   String namaUser = 'Pelanggan';
   String targetDiet = '-';
   String hariIniString = '';
-  bool adaPaketAktif = false;
-
+  
   List<dynamic> jadwalHariIni = [];
   Map<String, String> mapAlamat = {}; 
+  bool adaPaketAktif = false;
   
+  // TAMBAHAN: Menyimpan menu harian. Format: { 'Sarapan': 'Oatmeal...', 'Siang': 'Ayam...' }
+  Map<String, String> mapMenuHariIni = {}; 
+
   @override
   void initState() {
     super.initState();
@@ -48,8 +51,11 @@ class _LayarBerandaState extends State<LayarBeranda> {
       if (user == null) return;
 
       hariIniString = dapatkanHariIni();
-      final hariIniISO = DateTime.now().toIso8601String();
+      
+      // Ambil tanggal hari ini dengan format YYYY-MM-DD
+      final tanggalHariIni = DateTime.now().toIso8601String().split('T')[0];
 
+      // 1. Tarik profil user (termasuk target diet)
       final responseProfil = await Supabase.instance.client
           .from('users')
           .select('nama_lengkap, target_diet')
@@ -61,16 +67,31 @@ class _LayarBerandaState extends State<LayarBeranda> {
         targetDiet = responseProfil['target_diet'] ?? 'Belum ada target';
       }
 
+      // 2. Cek status paket aktif
       final cekPaket = await Supabase.instance.client
           .from('transaksi_langganan')
           .select('id')
           .eq('user_id', user.id)
-          .eq('status_bayar', 'Lunas') 
-          .gte('tanggal_selesai', hariIniISO)
+          .eq('status_bayar', 'Lunas')
+          .gte('tanggal_selesai', DateTime.now().toIso8601String())
           .maybeSingle();
           
       adaPaketAktif = cekPaket != null;
 
+      // 3. Tarik Master Menu Harian khusus untuk target diet user ini dan hari ini
+      if (targetDiet != 'Belum ada target') {
+        final responseMenu = await Supabase.instance.client
+            .from('master_menu_harian')
+            .select('waktu_makan, nama_menu')
+            .eq('tanggal', tanggalHariIni)
+            .eq('target_diet', targetDiet);
+
+        for (var menu in responseMenu) {
+          mapMenuHariIni[menu['waktu_makan']] = menu['nama_menu'];
+        }
+      }
+
+      // 4. Tarik daftar alamat
       final responseAlamat = await Supabase.instance.client
           .from('alamat_user')
           .select('id, label_alamat')
@@ -80,6 +101,7 @@ class _LayarBerandaState extends State<LayarBeranda> {
         mapAlamat[alamat['id'].toString()] = alamat['label_alamat'];
       }
 
+      // 5. Tarik jadwal pengiriman
       final responseJadwal = await Supabase.instance.client
           .from('jadwal_pengiriman')
           .select()
@@ -87,7 +109,6 @@ class _LayarBerandaState extends State<LayarBeranda> {
           .eq('hari', hariIniString);
 
       final urutanWaktu = {'Sarapan': 1, 'Siang': 2, 'Malam': 3};
-      
       List<dynamic> jadwalMentah = List.from(responseJadwal);
       jadwalMentah.sort((a, b) {
         int nilaiA = urutanWaktu[a['waktu_makan']] ?? 99;
@@ -100,7 +121,6 @@ class _LayarBerandaState extends State<LayarBeranda> {
           jadwalHariIni = jadwalMentah;
         });
       }
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -125,10 +145,13 @@ class _LayarBerandaState extends State<LayarBeranda> {
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () async {
               await Supabase.instance.client.auth.signOut();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LayarAuth()),
-              );
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LayarAuth()),
+                  (route) => false,
+                );
+              }
             },
           )
         ],
@@ -144,28 +167,16 @@ class _LayarBerandaState extends State<LayarBeranda> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'Halo, $namaUser!',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
+                    Text('Halo, $namaUser!', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 5),
-                    Text(
-                      'Program Aktif: $targetDiet',
-                      style: const TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
+                    Text('Program Aktif: $targetDiet', style: const TextStyle(fontSize: 16, color: Colors.grey)),
                     const SizedBox(height: 30),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Pengiriman Hari Ini',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          hariIniString,
-                          style: const TextStyle(fontSize: 16, color: Colors.green, fontWeight: FontWeight.bold),
-                        ),
+                        const Text('Pengiriman Hari Ini', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text(hariIniString, style: const TextStyle(fontSize: 16, color: Colors.green, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const SizedBox(height: 15),
@@ -173,10 +184,7 @@ class _LayarBerandaState extends State<LayarBeranda> {
                     jadwalHariIni.isEmpty
                         ? Container(
                             padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
                             child: Text(
                               adaPaketAktif 
                                 ? 'Tidak ada jadwal pengiriman untuk hari ini.'
@@ -193,20 +201,45 @@ class _LayarBerandaState extends State<LayarBeranda> {
                               final jadwal = jadwalHariIni[index];
                               final idAlamat = jadwal['alamat_id'].toString();
                               final namaAlamat = mapAlamat[idAlamat] ?? 'Alamat tidak diketahui';
+                              
+                              // Ambil nama menu dari map yang sudah kita tarik dari DB
+                              final waktuMakan = jadwal['waktu_makan'];
+                              final namaMenu = mapMenuHariIni[waktuMakan] ?? 'Menu spesial Chef (Kejutan!)';
 
                               return Card(
-                                margin: const EdgeInsets.only(bottom: 10),
+                                margin: const EdgeInsets.only(bottom: 12),
                                 elevation: 2,
-                                child: ListTile(
-                                  leading: const CircleAvatar(
-                                    backgroundColor: Colors.green,
-                                    child: Icon(Icons.local_shipping, color: Colors.white, size: 20),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const CircleAvatar(
+                                        backgroundColor: Colors.green,
+                                        radius: 20,
+                                        child: Icon(Icons.restaurant, color: Colors.white, size: 20),
+                                      ),
+                                      const SizedBox(width: 15),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(waktuMakan, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                            const SizedBox(height: 4),
+                                            Text(namaMenu, style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                                const SizedBox(width: 4),
+                                                Text('Dikirim ke: $namaAlamat', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  title: Text(
-                                    jadwal['waktu_makan'],
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  subtitle: Text('Tujuan: $namaAlamat'),
                                 ),
                               );
                             },
@@ -214,7 +247,21 @@ class _LayarBerandaState extends State<LayarBeranda> {
 
                     const SizedBox(height: 40),
 
-                    if (!adaPaketAktif) 
+                    if (adaPaketAktif)
+                      Container(
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.green, width: 1),
+                        ),
+                        child: const Text(
+                          'Paket langganan Anda sedang aktif. Selesaikan paket saat ini untuk memesan program baru.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                        ),
+                      )
+                    else
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
@@ -222,15 +269,9 @@ class _LayarBerandaState extends State<LayarBeranda> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()),
-                          );
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const LayarKalkulatorGizi()));
                         },
-                        child: const Text(
-                          'PILIH PAKET LANGGANAN BARU',
-                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        child: const Text('PILIH PAKET LANGGANAN BARU', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                   ],
                 ),
