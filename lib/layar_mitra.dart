@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'layar_auth.dart';
+import 'layar_input_menu.dart';
 
 class LayarMitra extends StatefulWidget {
   const LayarMitra({super.key});
@@ -136,6 +137,17 @@ class _LayarMitraState extends State<LayarMitra> {
             },
           )
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LayarInputMenu()),
+          );
+        },
+        backgroundColor: Colors.orange,
+        icon: const Icon(Icons.edit_document, color: Colors.white),
+        label: const Text('Isi Menu', style: TextStyle(color: Colors.white)),
       ),
       body: isMemuat
           ? const Center(child: CircularProgressIndicator(color: Colors.orange))
