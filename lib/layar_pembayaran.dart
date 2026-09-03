@@ -33,7 +33,7 @@ class _LayarPembayaranState extends State<LayarPembayaran> {
       await Supabase.instance.client.from('transaksi_langganan').insert({
         'user_id': userId,
         'paket_id': widget.paketId,
-        'total_bayar': widget.hargaPaket,
+        'total_harga': widget.hargaPaket,
         'status_bayar': 'Menunggu Konfirmasi',
       });
 
