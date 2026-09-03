@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'layar_alamat.dart';
 
 class LayarPilihPaket extends StatefulWidget {
   const LayarPilihPaket({super.key});
@@ -79,8 +80,9 @@ class _LayarPilihPaketState extends State<LayarPilihPaket> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
                             ),
                             onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Memilih ${paket['nama_paket']}... Lanjut atur alamat!', style: const TextStyle(color: Colors.white)), backgroundColor: Colors.green,)
+                              Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LayarAlamat()),
                               );
                             },
                             child: const Text('PILIH', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),

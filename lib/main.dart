@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; 
-import 'layar_kalkulator.dart';
 import 'layar_auth.dart';
 
 Future<void> main() async {
@@ -12,7 +11,6 @@ Future<void> main() async {
     anonKey: 'sb_publishable_P1rQSJcxdlJMDP45pS_DwA_jWdjA12Z',
   );
 
-  // Bungkus aplikasi pakai ProviderScope agar Riverpod bisa jalan di seluruh aplikasi
   runApp(
     const ProviderScope(
       child: MyApp(),
