@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'layar_pembayaran.dart';
 
 class LayarJadwal extends StatefulWidget {
   final List<dynamic> daftarAlamat;
@@ -62,7 +63,12 @@ class _LayarJadwalState extends State<LayarJadwal> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Jadwal berhasil disimpan! Lanjut ke Pembayaran.'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Jadwal berhasil disimpan!'), backgroundColor: Colors.green),
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LayarPembayaran()),
         );
       }
     } catch (e) {
@@ -113,7 +119,6 @@ class _LayarJadwalState extends State<LayarJadwal> {
                                   child: Text(w, style: const TextStyle(fontWeight: FontWeight.w500)),
                                 ),
                                 Expanded(
-                                  // PERBAIKAN 2: Mengubah DropdownButtonFormField<int> menjadi <String>
                                   child: DropdownButtonFormField<String>(
                                     value: jadwalPengiriman[h]![w],
                                     hint: const Text('Pilih Alamat'),
@@ -122,10 +127,8 @@ class _LayarJadwalState extends State<LayarJadwal> {
                                       border: OutlineInputBorder(),
                                       contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0)
                                     ),
-                                    // PERBAIKAN 3: Mengubah map<DropdownMenuItem<int>> menjadi <String>
                                     items: widget.daftarAlamat.map<DropdownMenuItem<String>>((alamat) {
                                       return DropdownMenuItem<String>(
-                                        // Memastikan id diubah menjadi string (berjaga-jaga jika tipe datanya campuran)
                                         value: alamat['id'].toString(), 
                                         child: Text(alamat['label_alamat']),
                                       );
